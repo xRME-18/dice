@@ -163,6 +163,12 @@ func (m *Manager) notifyClients(fingerprint uint32, diceDBCmd *cmd.DiceDBCmd) {
 	}
 
 	for clientChan := range clients {
-		clientChan <- diceDBCmd
+		select {
+		case clientChan <- diceDBCmd:
+		default:
+			// Channel was closed or full
+			slog.Error("Failed to send to client channel - channel may be closed or blocked",
+				slog.Uint64("fingerprint", uint64(fingerprint)))
+		}
 	}
 }
